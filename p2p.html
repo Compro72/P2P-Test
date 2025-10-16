@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+</head>
+<body>
+    <div>
+        <h1 id="accept" style="display: none;">Share this text with the inviter to connect</h1>
+        <button onclick="p2p.createOffer()" id="offer">Create Offer</button>
+        <br>
+        <textarea id="input" placeholder="Paste Offer or Answer"></textarea>
+        <button id="copyText" style="display: none;" onclick="copyText()">COPY TEXT</button>
+        <br>
+        <button onclick="p2p.process(document.getElementById('input').value)" id="process">Process Offer or Answer</button>
+        <p id="output" style="overflow: hidden;"></p>
+    </div>
+
+
+    <script src="main.js"></script>
+</body>
+</html>
