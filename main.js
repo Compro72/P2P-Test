@@ -1,93 +1,104 @@
-class P2PDataChannel {
-	constructor() {
-		this.device = null;
-		this.dataChannel = null;
-		this.iceList = [];
-		this.isInitiator = null;
+let offsetX = 0;
+let offsetY = 0;
+let viewportSpeed = 20;
 
-		this.onSignalGenerated = (signal) => {};
-		this.onDataReceived = (data) => {};
-	}
+let mouseDown = false;
 
-	initialize() {
-		if (this.device && this.device.connectionState !== "closed") {
-			this.device.close();
-		}
+let world;
+let viewport;
+let p2p;
 
-		this.device = new RTCPeerConnection({iceServers: [{urls: "stun:stun.l.google.com:19302"}]});
-		this.iceList = [];
+function setupP2P() {
+	p2p = new P2PDataChannel();
 
-		this.device.onicecandidate = ({ candidate }) => {
-			if (candidate != null) {
-				this.iceList.push(candidate);
-			} else {
-				let input = JSON.stringify({
-					sdp: this.device.localDescription,
-					iceList: this.iceList
-				}, null, 2);
+	p2p.onSignalGenerated = (signal) => {
+		console.log(signal);
+		navigator.clipboard.writeText(signal);
+		alert("Text Copied");
+	};
 
-				if (this.isInitiator) {
-					input = document.URL + "#offer=" + input;
-				}
-				
-				this.onSignalGenerated(input);
-			}
-		};
+	p2p.onDataReceived = (data) => {
+		world.decodeRemoteData(data)
+	};
+}
 
-		this.device.ondatachannel = (event) => {
-			this.setupDataChannelListeners(event.channel);
-		};
-	}
 
-	setupDataChannelListeners(dc) {
-		this.dataChannel = dc;
-		this.dataChannel.onmessage = (event) => this.onDataReceived(event.data);
-	}
-
-	async createOffer() {
-		this.isInitiator = true;
-		this.initialize(true);
-
-		let dc = this.device.createDataChannel("p5-data-channel");
-		this.setupDataChannelListeners(dc);
-
-		let offer = await this.device.createOffer();
-		await this.device.setLocalDescription(offer);
-	}
-
-	async process(text) {
-		let input = JSON.parse(text);
-		let otherSDP = input.sdp;
-		let remoteCandidates = input.iceCandidates || [];
-		
-		if (!this.device) {
-			this.isInitiator = false;
-			this.initialize();
-		}
-		
-		await this.device.setRemoteDescription(new RTCSessionDescription(otherSDP));
-
-		remoteCandidates.forEach(candidate => {
-			this.device.addIceCandidate(new RTCIceCandidate(candidate))
-				.catch(e => console.error(`Error adding remote ICE candidate: ${e}`));
-		});
-
-		if (otherSDP.type === "offer") {
-			let answer = await this.device.createAnswer();
-			await this.device.setLocalDescription(answer);
-		}
-	}
-
-	sendData(data) {
-		if (this.dataChannel && this.dataChannel.readyState === "open") {
-			this.dataChannel.send(JSON.stringify(data));
-			return true;
-		}
-		return false;
+function setup() {
+	createCanvas(windowWidth, windowHeight);
+	world = new World()
+	viewport = new Viewport(0, 0);
+	viewport.restrict(0, 0)
+	world.attachViewport(viewport);
+	for (let i=0; i<100; i++) {
+		world.addUnit(new Unit(i, createVector(100, 100), createVector(100, 100), 12, 10, 0.8, 10, createVector(1, 0)));
 	}
 }
 
 
+function draw() {
+	background(0, 0, 0);
+
+	if (keyIsDown(37)) {
+		viewport.position.x -= viewportSpeed;
+	}
+	if (keyIsDown(38)) {
+		viewport.position.y -= viewportSpeed;
+	}
+	if (keyIsDown(39)) {
+		viewport.position.x += viewportSpeed;
+	}
+	if (keyIsDown(40)) {
+		viewport.position.y += viewportSpeed;
+	}
+
+	world.render();
+
+	noFill();
+	stroke(255);
+	strokeWeight(2);
+	if (mouseDown) {
+		rect(offsetX, offsetY, mouseX-offsetX, mouseY-offsetY);
+	}
+	if (p2p) {
+		p2p.sendData(world.encodeLocalData());
+	}
+}
+
+function windowResized() {
+	resizeCanvas(windowWidth, windowHeight);
+}
+
+function mousePressed() {
+	world.localData.units.forEach(unit => {
+		unit.target = screenToWorld(createVector(mouseX, mouseY), viewport)
+	});
+
+	mouseDown = true;
+	offsetX = mouseX;
+	offsetY = mouseY;
+}
+
+function mouseReleased() {
+	mouseDown = false;
+}
+
+
+
+window.onload = () => {
+	setupP2P();
+
+	const hash = window.location.hash;
+	if (hash.startsWith("#offer=")) {
+		const encodedSignal = hash.substring('#offer='.length);
+
+		try {
+			decoded = decodeURIComponent(encodedSignal)
+			p2p.process(decodeURIComponent(encodedSignal))
+		} catch(e) {}
+	} else {
+		p2p.createOffer()
+	}
+};
 
 
 
@@ -96,8 +107,13 @@ class P2PDataChannel {
 
 
 
-let p2p; 
 
+
+
+
+
+
+/*
 let thisPosX = 0;
 let thisPosY = 0;
 let otherPosX = 0;
@@ -176,3 +192,4 @@ window.onload = () => {
 		} catch(e) {}
 	}
 };
+*/

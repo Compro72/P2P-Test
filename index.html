@@ -1,21 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.4.0/p5.js"></script>
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.0/p5.min.js"></script>
+	<link rel="stylesheet" href="style.css">
 </head>
-<body>
-    <div>
-        <h1 id="accept" style="display: none;">Share this text with the inviter to connect</h1>
-        <button onclick="p2p.createOffer()" id="offer">Create Offer</button>
-        <br>
-        <textarea id="input" placeholder="Paste Offer or Answer"></textarea>
-        <button id="copyText" style="display: none;" onclick="copyText()">COPY TEXT</button>
-        <br>
-        <button onclick="p2p.process(document.getElementById('input').value)" id="process">Process Offer or Answer</button>
-        <p id="output" style="overflow: hidden;"></p>
-    </div>
-
-
-    <script src="main.js"></script>
+<body onclick="goFullscreen()">
+	<textarea id="input" placeholder="Paste Answer" style="position: absolute; top: 30px;"></textarea>
+	<button id="process" onclick="p2p.process(document.getElementById('input').value)" style="position: absolute;">Process Answer</button>
+	<script src="utils.js"></script>
+	<script src="p2p.js"></script>
+	<script src="world.js"></script>
+	<script src="viewport.js"></script>
+	<script src="units.js"></script>
+	<script src="main.js"></script>
 </body>
 </html>
